@@ -90,7 +90,7 @@ function NavLink({
         className,
       )}
     >
-      <div className="flex items-center justify-start gap-1">
+      <div className="flex max-w-full items-center justify-start gap-1">
         {icon}
         {tag ? (
           <div className="flex items-center gap-2">
