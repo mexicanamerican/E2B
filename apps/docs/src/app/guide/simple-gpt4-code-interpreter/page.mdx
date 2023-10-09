@@ -2,10 +2,18 @@ import {
   PlusCircle,
   Plus,
   ChevronsUp,
+  BadgeCheck,
 } from 'lucide-react'
 
 export const ExtraIcon = (
   <ChevronsUp
+    size={14}
+    className="text-emerald-500"
+  />
+)
+
+export const FinishIcon = (
+  <BadgeCheck
     size={14}
     className="text-emerald-500"
   />
@@ -21,7 +29,8 @@ export const sections = [
   { title: 'Run GPT-generated code', id: 'run-gpt-generated-code', },
   { title: 'Let GPT install missing libraries', id: 'upgrade-let-gpt-install-missing-libraries', icon: ExtraIcon, },
   { title: 'Let GPT fix generated code', id: 'upgrade-let-gpt-fix-generated-code', icon: ExtraIcon, },
-  { title: 'Final code', id: 'final-code', },
+  { title: 'Never-ending chat loop', id: 'neverending-chat-loop', icon: ExtraIcon, },
+  { title: 'Final code', id: 'final-code', icon: FinishIcon, },
 ]
 
 # Build Custom Code Interpreter with E2B and GPT-4
@@ -389,8 +398,11 @@ And this what the executed code for "Generate first 100 fibonacci numbers" promp
 
 
 ## Upgrade: Let GPT install missing libraries
-The current version of our code interpreter has one big flaw. It doesn't allow to install missing libraries. If GPT decided to generate code that uses a library that is not installed, the code will fail to execute.
-We're going to solve this problem by letting GPT install missing libraries by adding a new OpenAI function called `install_package`.
+The current version of our code interpreter has a big flaw. If GPT decided to generate code that uses a package that's not already installed in the E2B playground, the code will fail to execute.
+
+We're going to solve this problem by letting GPT install missing packages.
+We'll define a new OpenAI function called `install_package`.
+The idea is that GPT calls this function if it thinks it needs to install a new package. Once the function is called, we'll install the required package inside the E2B playground.
 
 This is how our new `functions` variable looks like. The highlighted lines are the new code.
 
@@ -463,15 +475,150 @@ functions = [
 ```
 </CodeGroup>
 
-Now we need to add a new `if` statement to our code that will detect if the model is calling the `install_package` function and if it does, we need to install the package using E2B.
+Now we need to go back to the code where we're parsing GPT response. We'll add new `if` statement to check if the LLM is calling the `install_package` function.
 
+<CodeGroup isRunnable={false}>
+```js
+// TODO
+```
+
+```python
+  message = response["choices"][0]["message"]
+  if message.get("function_call"):
+    func = message["function_call"]
+    func_name = func["name"]
+
+    # Get rid of newlines and leading/trailing spaces in the raw function arguments JSON string.
+    # This sometimes help to avoid JSON parsing errors.
+    args = func["arguments"].strip().replace("\n", "")
+    # Parse the cleaned up JSON string.
+    func_args = json.loads(args)
+
+    # If the model is calling the exec_code function we defined in the `functions` variable, we want to save the `code` argument to a variable.
+    if func_name == "exec_code":
+      code = func_args["code"]
+      stdout, stderr = await e2b.run_code("Node16", code)
+      print(stdout)
+      print(stderr)
+    elif func_name == "install_package": # $HighlightLine
+      package_name = func_args["name"] # $HighlightLine
+      # TODO: Install the package inside E2B playground
+  else:
+    # The model didn't call any function, so we just print the message.
+    content = message["content"]
+    print(content)
+```
+</CodeGroup>
+
+How do we install the package inside the E2B playground though?<br/>
+For code execution, we used the `run_code()`/`runCode()` function.
+The run code function is simple to use because it abstracts away all the management of the E2B playground session. This abstraction comes handy but it also means that the session ends once the function finishes executing.
+We need for the session to exist for the whole time our code interpreter is running. This way we can both run the GPT-generated code and install required packages.
 
 ### Switch to long-running session with E2B
+To be able to do more complex tasks in E2B playground, like installing packages, we need to control the whole playground session. We want the session to be alive for the whole time our code interpreter is running.
+We'll do it by creating our own instance of `Session`. Then we'll use the low-level `session.process` API to execute code and install packages. This is essentially what the `runCode`/`run_code` function does under the hood.
+
+Let's start by creating a new instance of `Session` and saving it to a variable.
+
+First, create a global variable called `session` and initialize it before we make the OpenAI call. I highlighted the new code.
+<CodeGroup>
+```js
 TODO
+```
+
+```python
+# ... previous code
+
+# The `id` parameter specify which runtime you want to have preinstalled.
+# Our code interpreter can run JavaScript code, so we'll use the Node runtime.
+session = await e2b.Session.create(id="Node") # $HighlightLine
+
+response = openai.ChatCompletion.create(
+  model="gpt-4",
+  messages=[
+      {"role": "system", "content": "You are a senior developer that can code in JavaScript. Always produce valid JSON."},
+      {"role": "user", "content": "Write hello world"},
+      {"role": "assistant", "content": '{"code": "console.log(\"hello world\")"}', "name":"exec_code"},
+      {"role": "user", "content": "Generate first 100 fibonacci numbers"},
+  ],
+  functions=functions,
+)
+
+# ... rest of the code
+```
+</CodeGroup>
+
+First, let's replace the import run code function with out own run code function that use the `session` directly.
+<CodeGroup>
+```js
+// TODO
+```
+
+```python
+async def run_code(code: str): # $HighlightLine
+  global session
+  # First we need to write the code to a file.
+  await session.filesystem.write("/home/user/index.js", code)
+
+  # Then execute the file with Node.
+  proc = await session.process.start("node /home/user/index.js")
+  # Wait for the process to finish.
+  out = await proc
+
+  # Return the stdout and stderr.
+  return out.stdout, out.stderr
+
+async def main():
+  # ... code we wrote previously
+  if func_name == "exec_code":
+    code = func_args["code"]
+    # We replaced the `e2b.run_code` function with our own new `run_code` function
+    stdout, stderr = await run_code(code) # $HighlightLine
+    print(stdout)
+    print(stderr)
+  # ... rest of the code
+```
+</CodeGroup>
+
+Now we can define another function for installing packages with `session` and use it in the `if` statement we added earlier.
+<CodeGroup>
+```js
+```
+
+```python
+async def install_package(package: str):
+  global session
+  # Install the package
+  proc = await session.process.start(f"npm install {package}")
+  # Wait for the process to finish.
+  out = await proc
+
+  return out.stdout, out.stderr
+
+async def main():
+  # ... code we wrote previously
+  # If the model is calling the exec_code function we defined in the `functions` variable, we want to save the `code` argument to a variable.
+  if func_name == "exec_code":
+    code = func_args["code"]
+    stdout, stderr = await run_code(code)
+    print(stdout)
+    print(stderr)
+  elif func_name == "install_package": # $HighlightLine
+    package_name = func_args["name"] # $HighlightLine
+    stdout, stderr = await install_package(package_name) # $HighlightLine
+    print(stdout) # $HighlightLine
+    print(stderr) # $HighlightLine
+  # ... rest of the code
+```
+</CodeGroup>
 
 ## Upgrade: Let GPT fix generated code
 TODO
 
+
+## Upgrade: Never-ending chat loop
+TODO
 
 
 ## Final code
