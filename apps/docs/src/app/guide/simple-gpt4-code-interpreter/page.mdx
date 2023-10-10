@@ -27,9 +27,9 @@ export const sections = [
   { title: 'Prepare OpenAI functions', id: 'prepare-open-ai-functions', },
   { title: 'Parse GPT response', id: 'parse-gpt-response', },
   { title: 'Run GPT-generated code', id: 'run-gpt-generated-code', },
-  { title: 'Let GPT install missing libraries', id: 'upgrade-let-gpt-install-missing-libraries', icon: ExtraIcon, },
-  { title: 'Let GPT fix generated code', id: 'upgrade-let-gpt-fix-generated-code', icon: ExtraIcon, },
-  { title: 'Never-ending chat loop', id: 'neverending-chat-loop', icon: ExtraIcon, },
+  { title: 'Let GPT install packages', id: 'upgrade-let-gpt-install-packages', icon: ExtraIcon, },
+  // { title: 'Let GPT fix generated code', id: 'upgrade-let-gpt-fix-generated-code', icon: ExtraIcon, },
+  // { title: 'Never-ending chat loop', id: 'neverending-chat-loop', icon: ExtraIcon, },
   { title: 'Final code', id: 'final-code', icon: FinishIcon, },
 ]
 
@@ -398,10 +398,9 @@ And this what the executed code for "Generate first 100 fibonacci numbers" promp
 
 
 ## Upgrade: Let GPT install missing libraries
-The current version of our code interpreter has a big flaw. If GPT decided to generate code that uses a package that's not already installed in the E2B playground, the code will fail to execute.
+The code interpreter we've built so far has a flaw. If GPT decided to generate code that uses a package that's not already installed in the E2B playground, the code will fail to execute.
 
-We're going to solve this problem by letting GPT install missing packages.
-We'll define a new OpenAI function called `install_package`.
+We're going to solve this flaw by letting GPT install missing packages. We'll define a new OpenAI function called `install_package`.
 The idea is that GPT calls this function if it thinks it needs to install a new package. Once the function is called, we'll install the required package inside the E2B playground.
 
 This is how our new `functions` variable looks like. The highlighted lines are the new code.
@@ -488,13 +487,9 @@ Now we need to go back to the code where we're parsing GPT response. We'll add n
     func = message["function_call"]
     func_name = func["name"]
 
-    # Get rid of newlines and leading/trailing spaces in the raw function arguments JSON string.
-    # This sometimes help to avoid JSON parsing errors.
     args = func["arguments"].strip().replace("\n", "")
-    # Parse the cleaned up JSON string.
     func_args = json.loads(args)
 
-    # If the model is calling the exec_code function we defined in the `functions` variable, we want to save the `code` argument to a variable.
     if func_name == "exec_code":
       code = func_args["code"]
       stdout, stderr = await e2b.run_code("Node16", code)
@@ -558,15 +553,13 @@ First, let's replace the import run code function with out own run code function
 ```python
 async def run_code(code: str): # $HighlightLine
   global session
-  # First we need to write the code to a file.
+  # 1. First we need to write the code to a file.
   await session.filesystem.write("/home/user/index.js", code)
-
-  # Then execute the file with Node.
+  # 2. Then execute the file with Node.
   proc = await session.process.start("node /home/user/index.js")
-  # Wait for the process to finish.
+  # 3. Wait for the process to finish.
   out = await proc
-
-  # Return the stdout and stderr.
+  # 4. Return the stdout and stderr.
   return out.stdout, out.stderr
 
 async def main():
@@ -588,18 +581,17 @@ Now we can define another function for installing packages with `session` and us
 ```
 
 ```python
-async def install_package(package: str):
+async def install_package(package: str): # $HighlightLine
   global session
-  # Install the package
+  # 1. Install the package through starting the `npm` process
   proc = await session.process.start(f"npm install {package}")
-  # Wait for the process to finish.
+  # 2. Wait for the process to finish.
   out = await proc
-
+  #. 3. Return the stdout and stderr.
   return out.stdout, out.stderr
 
 async def main():
   # ... code we wrote previously
-  # If the model is calling the exec_code function we defined in the `functions` variable, we want to save the `code` argument to a variable.
   if func_name == "exec_code":
     code = func_args["code"]
     stdout, stderr = await run_code(code)
@@ -614,12 +606,12 @@ async def main():
 ```
 </CodeGroup>
 
-## Upgrade: Let GPT fix generated code
+{/* ## Upgrade: Let GPT fix generated code
 TODO
 
 
 ## Upgrade: Never-ending chat loop
-TODO
+TODO */}
 
 
 ## Final code
