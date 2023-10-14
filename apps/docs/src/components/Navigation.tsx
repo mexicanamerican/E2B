@@ -271,15 +271,6 @@ export const navigation = [
       { title: 'What is E2B & AI Playgrounds?', href: '/' },
       { title: 'Pricing', href: '/pricing' },
       {
-        title: 'Example: Build Code Interpreter',
-        href: '/guide/simple-gpt4-code-interpreter',
-      },
-    ],
-  },
-  {
-    title: 'Getting Started',
-    links: [
-      {
         icon: (
           <Settings
             strokeWidth={1}
@@ -299,17 +290,30 @@ export const navigation = [
         title: 'API Key',
         href: '/getting-started/api-key',
       },
-      // { title: 'SDK Basics', href: '/getting-started/basics' },
-      // { title: 'SDK Timeouts', href: '/getting-started/sdk-timeouts' },
-      // { title: 'SDK Logging', href: '/getting-started/sdk-logging' },
-      // {
-      //   title: 'SDK Multiple Processes',
-      //   href: '/getting-started/sdk-multiple-processes',
-      // },
     ],
   },
   {
-    title: 'AI Playgrounds SDK',
+    title: 'Guides',
+    links: [
+      {
+        title: 'Example: Build Code Interpreter',
+        href: '/guide/simple-gpt4-code-interpreter',
+      },
+      { title: 'Execute Code', href: '/agents/exec' },
+      // { title: 'Installing Dependencies', href: '/agents/deps' },
+      { title: 'Clone GitHub Repository', href: '/agents/clone-repo' },
+      { title: 'Run Shell Commands', href: '/agents/shell-commands' },
+      // { title: 'Read File', href: '/agents/read' },
+      // { title: 'Write File', href: '/agents/write' },
+      // TODO: Guide for building ffmpeg agent
+    ],
+  },
+  {
+    title: 'High level modules/use-cases',
+    links: [{ title: 'Data Analysis', href: '/use-cases/data-analysis' }],
+  },
+  {
+    title: 'Low level API',
     links: [
       { title: 'Overview', href: '/playgrounds/overview' },
       {
@@ -404,19 +408,6 @@ export const navigation = [
       },
     ],
   },
-  {
-    title: 'AI Agents Use Case',
-    links: [
-      { title: 'Execute Code', href: '/agents/exec' },
-      // { title: 'Installing Dependencies', href: '/agents/deps' },
-      { title: 'Clone GitHub Repository', href: '/agents/clone-repo' },
-      { title: 'Run Shell Commands', href: '/agents/shell-commands' },
-      // { title: 'Read File', href: '/agents/read' },
-      // { title: 'Write File', href: '/agents/write' },
-      // TODO: Guide for building ffmpeg agent
-    ],
-  },
-
   // {
   //   title: 'AI Environments',
   //   links: [

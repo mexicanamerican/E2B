@@ -1,0 +1,97 @@
+import {
+  PlusCircle,
+  Plus,
+  ChevronsUp,
+} from 'lucide-react'
+
+
+export const sections = [
+//   { title: 'Install E2B and OpenAI', id: 'install-e2-b-and-open-ai', },
+]
+
+# Data Analysis template
+
+The template serves as a convenient starting point for data analysis projects. It's built on top of our sessions and custom envs, you are able to create similar templates yourself.{{ className: 'lead' }}
+
+## Showcasing the Data Analysis template
+
+The Data Analysis has the following methods to help you with your data analysis project.{{ className: 'lead' }}
+
+### Run python code
+
+You can easily run python code, you will also receive artifacts - graphs that were created during the execution of the code. You can
+
+<CodeGroup isRunnable={false}>
+```js {{ language: 'js' }}
+import e2b from '@e2b/sdk'
+
+const session = await e2b.DataAnalysis.create()  // $HighlightLine
+const stdout, stderr, artifacts = await session.runPython("YOUR CODE", { // $HighlightLine
+    onArtifact: (artifact) => console.log(artifact)
+  }
+)
+
+await session.close()
+```
+
+```python {{ language: 'python' }}
+import e2b
+
+session = e2b.DataAnalysis.create()
+stdout, stderr, artifacts = session.run_python(  # $HighlightLine
+    "YOUR CODE", on_artifact=lambda artifact: print(artifact)  # $HighlightLine
+)
+
+session.close()
+```
+</CodeGroup>
+
+
+### Install python packages
+
+We simplified the installation of python packages, you can install them with a single line of code. You can install pass either string to install a single package or an array of strings to install multiple packages.
+
+<CodeGroup isRunnable={false}>
+```js {{ language: 'js' }}
+import e2b from '@e2b/sdk'
+
+const session = await e2b.DataAnalysis.create()
+await session.installPythonPackages("YOUR PACKAGE")  // $HighlightLine
+
+await session.close()
+```
+
+```python {{ language: 'python' }}
+import e2b
+
+session = e2b.DataAnalysis.create()
+session.install_python_packages("YOUR PACKAGE")  # $HighlightLine
+
+session.close()
+```
+</CodeGroup>
+
+### Install system packages
+
+You can install system packages with a single line of code. You can install pass either string to install a single package or an array of strings to install multiple packages.
+
+
+<CodeGroup isRunnable={false}>
+```js {{ language: 'js' }}
+import e2b from '@e2b/sdk'
+
+const session = await e2b.DataAnalysis.create()
+await session.installSystemPackages("YOUR PACKAGE")  // $HighlightLine
+
+await session.close()
+```
+
+```python {{ language: 'python' }}
+import e2b
+
+session = e2b.DataAnalysis.create()
+session.install_system_packages("YOUR PACKAGE")  # $HighlightLine
+
+session.close()
+```
+</CodeGroup>
