@@ -30,7 +30,7 @@ export function CopyableSecret({
           onAfterCopy={onAfterCopy}
           customPositionClassNames={clsx(
             'top-[-2px] bottom-[2px]' /* nudge 2px up*/,
-            'left-[-6px] right-[-6px]' /* widen a little to fit nicely */,
+            'left-[-8px] right-[-8px]' /* widen a little to fit nicely */,
             'min-h-[28px]',
           )}
         />
