@@ -3,11 +3,11 @@ import { CopyButton } from '@/components/CopyButton'
 import clsx from 'clsx'
 
 export function CopyableSecret({
-                          secret = '',
-                          onAfterCopy,
-                          obfuscateStart,
-                          obfuscateEnd,
-                        }: {
+  secret = '',
+  onAfterCopy,
+  obfuscateStart,
+  obfuscateEnd,
+}: {
   secret: string;
   onAfterCopy: () => void;
   obfuscateStart?: number;
