@@ -17,20 +17,33 @@ import pprint
 import re  # noqa: F401
 import json
 
+from datetime import datetime
+from typing import Any, Dict, Optional
+from pydantic import BaseModel, Field, StrictStr
 
-from typing import Any, Dict, List
-from pydantic import BaseModel, Field, StrictStr, conlist
 
-
-class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
+class RunningInstance(BaseModel):
     """
-    EnvsEnvIDBuildsBuildIDLogsPostRequest
+    RunningInstance
     """
 
-    api_secret: StrictStr = Field(..., alias="apiSecret", description="API secret")
-    logs: conlist(StrictStr) = Field(...)
+    env_id: StrictStr = Field(
+        ...,
+        alias="envID",
+        description="Identifier of the environment from which is the instance created",
+    )
+    instance_id: StrictStr = Field(
+        ..., alias="instanceID", description="Identifier of the instance"
+    )
+    client_id: StrictStr = Field(
+        ..., alias="clientID", description="Identifier of the client"
+    )
+    started_at: datetime = Field(
+        ..., alias="startedAt", description="Time when the instance was started"
+    )
+    metadata: Optional[Dict[str, StrictStr]] = None
     additional_properties: Dict[str, Any] = {}
-    __properties = ["apiSecret", "logs"]
+    __properties = ["envID", "instanceID", "clientID", "startedAt", "metadata"]
 
     class Config:
         """Pydantic configuration"""
@@ -47,8 +60,8 @@ class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> EnvsEnvIDBuildsBuildIDLogsPostRequest:
-        """Create an instance of EnvsEnvIDBuildsBuildIDLogsPostRequest from a JSON string"""
+    def from_json(cls, json_str: str) -> RunningInstance:
+        """Create an instance of RunningInstance from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
     def to_dict(self):
@@ -64,16 +77,22 @@ class EnvsEnvIDBuildsBuildIDLogsPostRequest(BaseModel):
         return _dict
 
     @classmethod
-    def from_dict(cls, obj: dict) -> EnvsEnvIDBuildsBuildIDLogsPostRequest:
-        """Create an instance of EnvsEnvIDBuildsBuildIDLogsPostRequest from a dict"""
+    def from_dict(cls, obj: dict) -> RunningInstance:
+        """Create an instance of RunningInstance from a dict"""
         if obj is None:
             return None
 
         if not isinstance(obj, dict):
-            return EnvsEnvIDBuildsBuildIDLogsPostRequest.parse_obj(obj)
+            return RunningInstance.parse_obj(obj)
 
-        _obj = EnvsEnvIDBuildsBuildIDLogsPostRequest.parse_obj(
-            {"api_secret": obj.get("apiSecret"), "logs": obj.get("logs")}
+        _obj = RunningInstance.parse_obj(
+            {
+                "env_id": obj.get("envID"),
+                "instance_id": obj.get("instanceID"),
+                "client_id": obj.get("clientID"),
+                "started_at": obj.get("startedAt"),
+                "metadata": obj.get("metadata"),
+            }
         )
         # store additional fields in additional_properties
         for _key in obj.keys():
