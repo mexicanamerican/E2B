@@ -3,11 +3,9 @@
 import { Button } from '@/components/Button'
 import { useUser } from '@/utils/useUser'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { tiers } from '@/utils/consts'
 
-export interface Props {
-  tierID: string
-}
+import { TierActiveTag } from './TierActiveTag'
 
 const billingApiURL = process.env.NEXT_PUBLIC_BILLING_API_URL
 function createCheckout(tierID: string, teamID: string) {
@@ -23,51 +21,46 @@ function createCheckout(tierID: string, teamID: string) {
   })
 }
 
-function tierDisplayName(tierID: string) {
-  if (tierID === 'pro_v1') {
-    return 'Pro'
-  }
-  throw new Error(`Unknown tierID: ${tierID}`)
-}
-
-
-function SwitchTearButton({
-  tierID,
-}: Props) {
+function SwitchTierButton() {
   const { user } = useUser()
   const [error, setError] = useState('')
-  const router = useRouter()
 
   async function createCheckoutSession() {
     setError('')
 
-    const response = await createCheckout(tierID, user.teams[0].id)
+    const response = await createCheckout(tiers.pro.id, user.teams[0].id)
     const responseData = await response.json()
 
     if (responseData.error) {
       setError(responseData.error)
     } else {
-      router.push(responseData.url)
+      window.open(responseData.url, '_blank')
     }
   }
 
   // Only show the button if the user is on the base_v1 tier.
   // Teams can have custom tiers. We only want the button to users on the free tier.
-  if (!user || !billingApiURL || user.teams[0].tier !== 'base_v1') {
+  if (!user || !billingApiURL || (user.pricingTier.id !== tiers.hobby.id && user.pricingTier.id !== tiers.pro.id)) {
     return
   }
 
   return (
     <div className="flex flex-col items-start justify-start gap-1 my-4">
       <div className="flex items-center justify-start gap-2">
-        <div className="flex flex-col items-start justify-start">
-        </div>
-        <Button
-          onClick={createCheckoutSession}
-        >
-          Switch to {tierDisplayName(tierID)} tier
-        </Button>
+        {user.pricingTier.id === tiers.pro.id && (
+          <TierActiveTag />
+        )}
+
+
+        {user.pricingTier.id !== tiers.pro.id && (
+          <Button
+            onClick={createCheckoutSession}
+          >
+            Switch to Pro
+          </Button>
+        )}
       </div>
+
       {error && (
         <span className="text-red-500 font-medium">{error}</span>
       )}
@@ -75,4 +68,4 @@ function SwitchTearButton({
   )
 }
 
-export default SwitchTearButton
+export default SwitchTierButton
