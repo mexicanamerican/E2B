@@ -12,13 +12,13 @@ import { EnvVars } from './envVars'
 import { getApiKey } from '../utils/apiKey'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SubscriptionHandler = (result: any) => void;
+type SubscriptionHandler = (result: any) => void
 
 type Service =
   | typeof processService
   | typeof codeSnippetService
   | typeof filesystemService
-  | typeof terminalService;
+  | typeof terminalService
 
 interface Subscriber {
   service: Service;
@@ -84,6 +84,9 @@ const listSandboxes = withAPIKey(
 const createSandbox = withAPIKey(
   api.path('/sandboxes').method('post').create(),
 )
+const killSandbox = withAPIKey(
+  api.path('/sandboxes/{sandboxID}').method('delete').create(),
+)
 const refreshSandbox = withAPIKey(
   api.path('/sandboxes/{sandboxID}/refreshes').method('post').create(),
 )
@@ -121,7 +124,7 @@ export class SandboxConnection {
       this.cwd = this.cwd.replace('~', '/home/user')
     }
 
-    const defaultEnvVars = { PYTHONUNBUFFERED: "1" }
+    const defaultEnvVars = { PYTHONUNBUFFERED: '1' }
 
     this.envVars = { ...defaultEnvVars, ...opts.envVars || {} }
 
@@ -162,6 +165,8 @@ export class SandboxConnection {
       return res.data.map(sandbox => ({
         sandboxID: `${sandbox.sandboxID}-${sandbox.clientID}`,
         templateID: sandbox.templateID,
+        cpuCount: sandbox.cpuCount,
+        memoryMB: sandbox.memoryMB,
         ...sandbox.alias && { alias: sandbox.alias },
         ...sandbox.metadata && { metadata: sandbox.metadata },
         startedAt: new Date(sandbox.startedAt),
@@ -178,6 +183,33 @@ export class SandboxConnection {
         if (error.status === 500) {
           throw new Error(
             `Error listing sandboxes - (${error.status}) server error: ${error.data.message}`,
+          )
+        }
+      }
+      throw e
+    }
+  }
+
+  /**
+   * List all running sandboxes
+   * @param sandboxID ID of the sandbox to kill
+   * @param apiKey API key to use for authentication. If not provided, the `E2B_API_KEY` environment variable will be used.
+   */
+  static async kill(sandboxID: string, apiKey?: string): Promise<void> {
+    apiKey = getApiKey(apiKey)
+    try {
+      await killSandbox(apiKey, {sandboxID})
+    } catch (e) {
+      if (e instanceof killSandbox.Error) {
+        const error = e.getActualType()
+        if (error.status === 401) {
+          throw new Error(
+            `Error killing sandbox (${sandboxID}) - (${error.status}) unauthenticated: ${error.data.message}`,
+          )
+        }
+        if (error.status === 500) {
+          throw new Error(
+            `Error killing sandbox (${sandboxID}) - (${error.status}) server error: ${error.data.message}`,
           )
         }
       }
@@ -537,11 +569,10 @@ export class SandboxConnection {
         await wait(SANDBOX_REFRESH_PERIOD)
 
         try {
-          this.logger.debug?.(`Refreshed sandbox "${sandboxID}"`)
-
           await refreshSandbox(this.apiKey, {
             sandboxID, duration: 0,
           })
+          this.logger.debug?.(`Refreshed sandbox "${sandboxID}"`)
         } catch (e) {
           if (e instanceof refreshSandbox.Error) {
             const error = e.getActualType()
