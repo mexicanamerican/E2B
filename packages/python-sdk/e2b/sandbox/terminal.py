@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 import logging
 import threading
 from concurrent.futures import Future
@@ -204,7 +207,7 @@ class TerminalManager:
                 ) from e
 
         # TODO: Handle exit handler finish for exits (the same for processes)
-        future_exit_handler_finish = Future[TerminalOutput]()
+        future_exit_handler_finish: Future[TerminalOutput] = Future()
 
         def exit_handler():
             future_exit.result()

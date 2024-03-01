@@ -1,10 +1,10 @@
 import { expect, test } from 'vitest'
 import { Sandbox } from '../src'
-import wait from '../src/utils/wait'
 
 test('kill running sandbox', async () => {
-  await expect(async () => {
-    const sandbox = await Sandbox.create()
-    await Sandbox.kill(sandbox.id)
-  }).rejects.toThrowError("Not Found")
+  const sandbox = await Sandbox.create()
+  await Sandbox.kill(sandbox.id)
+  const list = await Sandbox.list()
+  expect(list.map((s) => s.sandboxID)).not.toContain(sandbox.id)
+  await sandbox.close()
 })
